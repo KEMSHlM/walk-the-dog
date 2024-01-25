@@ -1,11 +1,15 @@
 use wasm_bindgen::prelude::*;
 // use web_sys::console;
-use rand::prelude::*;
 use wasm_bindgen::JsCast;
 use std::rc::Rc;
 use std::sync::Mutex;
-use serde::Deserialize;
+use serde::Deserialize; // jsonを構造体に変換するために必要
 use std::collections::HashMap;
+
+#[macro_use]
+mod browser;
+
+mod engine;
 
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.
@@ -49,10 +53,10 @@ pub fn main_js() -> Result<(), JsValue> {
     // It's disabled in release mode so it doesn't bloat up the file size.
     // #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
+    let context = browser::context().expect("Could not get browser context");
 
     // window()は，Option<Window>で返すので，unwrap()で取り出す．
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
+    let document = browser::document().expect("No Document Found");
     // get_element_by_id でCanvasを取得する．その際にOpthon<Element>で返すので,
     // dyn_intoを使って，HtmlCanvasElementにキャストする必要がある．
     let canvas = document
@@ -61,12 +65,16 @@ pub fn main_js() -> Result<(), JsValue> {
         .dyn_into::<web_sys::HtmlCanvasElement>()
         .unwrap();
 
-    let context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
+    browser::spawn_local(async move {
+        let sheet = browser::fetch_json("rhb.json")
+            .await
+            .expect("Could not fetch rhb.json")
+            .into_serde()
+            .expect("Could not convert rhb.json into a Sheet structure");
+
+        let image = web_sys::HtmlImageElement::new().unwrap();
+
+    });
 
     wasm_bindgen_futures::spawn_local(async move {
         // json ファイルの読み込み
@@ -121,11 +129,14 @@ pub fn main_js() -> Result<(), JsValue> {
                 sprite.frame.h.into(),
             );
         }) as Box<dyn FnMut()>);
+        
+        browser::window()
+            .unwrap()
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                interval_callback.as_ref().unchecked_ref(),
+                50,
+            );
 
-        window.set_interval_with_callback_and_timeout_and_arguments_0(
-            interval_callback.as_ref().unchecked_ref(),
-            50,
-        );
         interval_callback.forget();
 
     });

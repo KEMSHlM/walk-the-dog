@@ -20,6 +20,8 @@ lto = true
 # If you uncomment this line, it will enable `wee_alloc`:
 #default = ["wee_alloc"]
 
+# プロジェクトの依存する外部ライブラリをリストしている．
+# ここで指定したライブラリは，プロジェクト内で使用することができる．
 [dependencies]
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
@@ -36,7 +38,7 @@ rand = "0.8.4"
 getrandom = { version = "0.2.3", features = ["js"] }
 futures = "0.3.17"
 wasm-bindgen-futures = "0.4.28"
-serde = { version = "1.0.131", features = ["derive"] }
+anyhow = "1.0.51"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
@@ -44,6 +46,7 @@ serde = { version = "1.0.131", features = ["derive"] }
 version = "0.3.55"
 features = ["console", "Window", "Document", "HtmlCanvasElement", "CanvasRenderingContext2d", "Element", "HtmlImageElement", "Response"]
 
+# 開発時のみに利用されるライブラリをリストしている．
 # These crates are used for running unit tests.
 [dev-dependencies]
 wasm-bindgen-test = "0.3.28"
